@@ -1,19 +1,26 @@
 from aws_cdk import (
-    # Duration,
     Stack,
-    # aws_sqs as sqs,
+    aws_apigateway,
+    aws_lambda,
 )
 from constructs import Construct
 
-class ServerlessRestCdkStack(Stack):
+class PyRestApiStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # The code that defines your stack goes here
+        empl_lambda = aws_lambda.Function(
+            self,
+            "EmplLambda",
+            runtime=aws_lambda.Runtime.PYTHON_3_11,
+            handler="index.handler",
+            code=aws_lambda.Code.from_asset("services")
+        )
 
-        # example resource
-        # queue = sqs.Queue(
-        #     self, "ServerlessRestCdkQueue",
-        #     visibility_timeout=Duration.seconds(300),
-        # )
+        api = aws_apigateway.RestApi(self, "Py-Empl-Api")
+        empl_resource = api.root.add_resource("empl")
+        empl_lamda_integration = aws_apigateway.LambdaIntegration(empl_lambda)
+
+        empl_resource.add_method("GET", empl_lamda_integration)
+        empl_resource.add_method("POST", empl_lamda_integration)
